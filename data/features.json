@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-28T10:52:03.744693",
+  "stress_score": 57,
+  "stress_level": "Moderate",
+  "blink_rate": 18.8,
+  "eye_openness": 0.77,
+  "mouth_tension": 0.85,
+  "head_movement": 0.29,
+  "voice_pitch": 204.3,
+  "voice_energy": 0.66,
+  "speech_rate": 142.6,
+  "confidence": 0.8
+}

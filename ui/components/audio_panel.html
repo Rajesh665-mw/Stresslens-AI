@@ -1,0 +1,127 @@
+<!--
+  Live "pro audio software" style microphone visualizer.
+  Runs entirely client-side via the Web Audio API (AnalyserNode) on the
+  browser's own microphone stream — a real, live waveform + spectrum,
+  not a decorative loop. This is a separate device handle from Person A's
+  Python mic_capture.py, so on some systems only one of the two can hold
+  the microphone at once; this component fails gracefully if so.
+-->
+<div id="aud-root" style="border-radius:18px; overflow:hidden; background:#050810; border:1px solid rgba(167,139,250,0.18); padding:14px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span id="aud-rec-dot" style="width:9px;height:9px;border-radius:50%;background:#f87171; box-shadow:0 0 0 rgba(248,113,113,0.6);"></span>
+      <span style="font:700 0.75rem 'Inter',sans-serif; color:#e2e8f0;">LIVE MIC INPUT</span>
+    </div>
+    <span id="aud-speech-pill" style="font:700 0.68rem 'Inter',sans-serif; padding:3px 9px; border-radius:999px; background:rgba(148,163,184,0.12); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">—</span>
+  </div>
+
+  <canvas id="aud-wave" height="54" style="width:100%; height:54px; display:block; border-radius:10px; background:rgba(148,163,184,0.04);"></canvas>
+
+  <div style="display:flex; align-items:flex-end; gap:2px; height:42px; margin:10px 0 4px 0;" id="aud-bars"></div>
+
+  <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+    <div style="font:600 0.66rem 'Inter',sans-serif; color:#8291a8; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap;">VU</div>
+    <div style="flex:1; height:9px; border-radius:5px; background:rgba(148,163,184,0.12); overflow:hidden;">
+      <div id="aud-vu" style="height:100%; width:0%; border-radius:5px; background:linear-gradient(90deg,#4ade80,#fbbf24 65%,#f87171 90%); transition:width 0.08s linear;"></div>
+    </div>
+  </div>
+
+  <div id="aud-fallback" style="display:none; text-align:center; padding:14px 6px; color:#8291a8; font:500 0.76rem 'Inter',sans-serif; line-height:1.5;">
+    🎙️ Browser microphone unavailable — allow mic permission, or it may be in use by Person A's capture pipeline.
+  </div>
+</div>
+
+<script>
+(function () {
+  const waveCanvas = document.getElementById("aud-wave");
+  const waveCtx = waveCanvas.getContext("2d");
+  const barsWrap = document.getElementById("aud-bars");
+  const vuFill = document.getElementById("aud-vu");
+  const speechPill = document.getElementById("aud-speech-pill");
+  const recDot = document.getElementById("aud-rec-dot");
+  const fallback = document.getElementById("aud-fallback");
+
+  const N_BARS = 28;
+  const bars = [];
+  for (let i = 0; i < N_BARS; i++) {
+    const b = document.createElement("div");
+    b.style.flex = "1";
+    b.style.borderRadius = "3px 3px 0 0";
+    b.style.height = "4%";
+    b.style.background = "linear-gradient(180deg, #c4b5fd, #a78bfa 55%, #6366f1)";
+    b.style.transition = "height 0.06s linear";
+    barsWrap.appendChild(b);
+    bars.push(b);
+  }
+
+  let pulseT = 0;
+  function pulseRec() {
+    pulseT += 0.08;
+    const s = 0.55 + Math.abs(Math.sin(pulseT)) * 0.45;
+    recDot.style.boxShadow = `0 0 ${6 * s}px 2px rgba(248,113,113,${0.5 * s})`;
+    requestAnimationFrame(pulseRec);
+  }
+  pulseRec();
+
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then((stream) => {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.75;
+      source.connect(analyser);
+
+      const timeData = new Uint8Array(analyser.fftSize);
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+      function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteTimeDomainData(timeData);
+        analyser.getByteFrequencyData(freqData);
+
+        // waveform
+        const w = waveCanvas.width = waveCanvas.clientWidth;
+        const h = waveCanvas.height;
+        waveCtx.clearRect(0, 0, w, h);
+        waveCtx.lineWidth = 2;
+        waveCtx.strokeStyle = "#38bdf8";
+        waveCtx.beginPath();
+        const step = w / timeData.length;
+        let rms = 0;
+        for (let i = 0; i < timeData.length; i++) {
+          const v = (timeData[i] - 128) / 128;
+          rms += v * v;
+          const x = i * step;
+          const y = h / 2 + v * (h / 2) * 0.9;
+          if (i === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
+        }
+        waveCtx.stroke();
+        rms = Math.sqrt(rms / timeData.length);
+
+        // spectrum bars
+        const binStep = Math.floor(freqData.length / N_BARS);
+        for (let i = 0; i < N_BARS; i++) {
+          let sum = 0;
+          for (let j = 0; j < binStep; j++) sum += freqData[i * binStep + j];
+          const avg = sum / binStep / 255;
+          bars[i].style.height = Math.max(4, avg * 100).toFixed(0) + "%";
+        }
+
+        // VU + speech indicator
+        const vuPct = Math.min(100, rms * 260);
+        vuFill.style.width = vuPct.toFixed(0) + "%";
+        const speaking = rms > 0.02;
+        speechPill.textContent = speaking ? "🗣️ Speaking" : "🤫 Silence";
+        speechPill.style.color = speaking ? "#38bdf8" : "#94a3b8";
+        speechPill.style.background = speaking ? "rgba(56,189,248,0.12)" : "rgba(148,163,184,0.12)";
+        speechPill.style.borderColor = speaking ? "rgba(56,189,248,0.35)" : "rgba(148,163,184,0.3)";
+      }
+      draw();
+    })
+    .catch(() => {
+      fallback.style.display = "block";
+      recDot.style.background = "#475569";
+    });
+})();
+</script>

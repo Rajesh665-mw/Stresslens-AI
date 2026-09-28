@@ -1,0 +1,192 @@
+<!--
+  Live camera hero panel.
+  Runs entirely client-side in the browser: requests the browser's own
+  webcam via getUserMedia and runs Google's MediaPipe Face Mesh (loaded
+  from a CDN) on the live video to draw the mesh overlay. This is a real,
+  live, in-browser AI vision pipeline for the "wow" visual — it is
+  independent from Person A's Python/OpenCV capture pipeline, which is a
+  separate process producing the stress features. Two processes generally
+  cannot open the same physical camera at once, so if Person A's pipeline
+  already holds the webcam, the browser may report a busy/denied camera.
+  This component fails gracefully into a styled "camera unavailable" state
+  rather than breaking the page.
+-->
+<div id="cam-root" style="position:relative; width:100%; aspect-ratio:16/10; border-radius:20px; overflow:hidden;
+     background:#050810; border:1px solid rgba(56,189,248,0.18);">
+  <video id="cam-video" autoplay playsinline muted style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.92;"></video>
+  <canvas id="cam-canvas" style="position:absolute; inset:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
+
+  <div id="cam-scrim" style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(4,6,11,0.55) 0%, rgba(4,6,11,0) 22%, rgba(4,6,11,0) 70%, rgba(4,6,11,0.75) 100%); pointer-events:none;"></div>
+
+  <!-- top badges -->
+  <div style="position:absolute; top:14px; left:14px; display:flex; gap:8px; align-items:center; z-index:5;">
+    <span id="cam-live-badge" style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font:700 0.72rem 'Inter',sans-serif; background:rgba(248,113,113,0.14); color:#f87171; border:1px solid rgba(248,113,113,0.4);">
+      <span style="width:7px;height:7px;border-radius:50%;background:currentColor;animation:camPulse 1.3s ease-in-out infinite;"></span> LIVE
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font:700 0.7rem 'Inter',sans-serif; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">
+      ✨ AI VISION
+    </span>
+    <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font:700 0.7rem 'Inter',sans-serif; background:rgba(167,139,250,0.12); color:#c4b5fd; border:1px solid rgba(167,139,250,0.35);">
+      MediaPipe Face Mesh
+    </span>
+  </div>
+
+  <!-- face status pill (top right) -->
+  <div id="cam-face-pill" style="position:absolute; top:14px; right:14px; z-index:5; padding:6px 12px; border-radius:999px; font:700 0.72rem 'Inter',sans-serif;
+       background:rgba(148,163,184,0.12); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); transition: all 0.3s ease;">
+    ⏳ Initializing…
+  </div>
+
+  <!-- bottom telemetry strip -->
+  <div style="position:absolute; left:14px; right:14px; bottom:12px; z-index:5; display:flex; gap:10px; flex-wrap:wrap;">
+    <div class="cam-tel"><div class="cam-tel-k">FPS</div><div class="cam-tel-v" id="cam-fps">—</div></div>
+    <div class="cam-tel"><div class="cam-tel-k">Landmarks</div><div class="cam-tel-v" id="cam-landmarks">—</div></div>
+    <div class="cam-tel"><div class="cam-tel-k">Vision Latency</div><div class="cam-tel-v" id="cam-latency">—</div></div>
+    <div class="cam-tel"><div class="cam-tel-k">Detection Streak</div><div class="cam-tel-v" id="cam-streak">—</div></div>
+  </div>
+
+  <!-- no-face overlay -->
+  <div id="cam-noface" style="position:absolute; inset:0; z-index:6; display:none; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+       background:rgba(127,29,29,0.12); backdrop-filter:blur(2px); animation:fadeInCam 0.35s ease;">
+    <div style="width:54px; height:54px; border-radius:50%; border:2px solid #f87171; display:flex; align-items:center; justify-content:center; animation:noFacePulse 1.4s ease-in-out infinite;">
+      <span style="font-size:1.4rem;">⚠️</span>
+    </div>
+    <div style="font:800 0.95rem 'Inter',sans-serif; color:#fecaca; letter-spacing:0.02em;">No Face Detected</div>
+    <div style="font:500 0.72rem 'Inter',sans-serif; color:#fca5a5;">Repositioning in frame…</div>
+  </div>
+
+  <!-- camera unavailable fallback -->
+  <div id="cam-fallback" style="position:absolute; inset:0; z-index:7; display:none; align-items:center; justify-content:center; flex-direction:column; gap:10px; text-align:center; padding:20px;
+       background:radial-gradient(600px 300px at 50% 30%, rgba(56,189,248,0.08), transparent 70%);">
+    <div style="font-size:2.2rem;">📷</div>
+    <div style="font:800 0.95rem 'Inter',sans-serif; color:#e2e8f0;">Browser camera unavailable</div>
+    <div style="font:500 0.76rem 'Inter',sans-serif; color:#8291a8; max-width:340px; line-height:1.5;" id="cam-fallback-msg">
+      Grant camera permission in your browser, or close whatever else is using the webcam
+      (e.g. Person A's capture pipeline can only share the device with one process at a time).
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes camPulse { 0% { box-shadow: 0 0 0 0 rgba(248,113,113,0.6);} 70% { box-shadow: 0 0 0 6px rgba(248,113,113,0);} 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0);} }
+  @keyframes noFacePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.08); opacity:0.75; } }
+  @keyframes fadeInCam { from { opacity:0; } to { opacity:1; } }
+  .cam-tel { background:rgba(5,8,16,0.55); border:1px solid rgba(148,163,184,0.18); border-radius:12px; padding:6px 12px; backdrop-filter:blur(6px); }
+  .cam-tel-k { font:600 0.62rem 'Inter',sans-serif; color:#8291a8; text-transform:uppercase; letter-spacing:0.05em; }
+  .cam-tel-v { font:700 0.9rem 'JetBrains Mono',monospace; color:#f1f5f9; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+<script>
+(function () {
+  const video = document.getElementById("cam-video");
+  const canvas = document.getElementById("cam-canvas");
+  const ctx = canvas.getContext("2d");
+  const facePill = document.getElementById("cam-face-pill");
+  const noFace = document.getElementById("cam-noface");
+  const fallback = document.getElementById("cam-fallback");
+  const fallbackMsg = document.getElementById("cam-fallback-msg");
+  const fpsEl = document.getElementById("cam-fps");
+  const lmEl = document.getElementById("cam-landmarks");
+  const latEl = document.getElementById("cam-latency");
+  const streakEl = document.getElementById("cam-streak");
+
+  let lastFrameTime = performance.now();
+  let fpsSmoothed = 0;
+  let noFaceFrames = 0;
+  let faceFrames = 0;
+  let lastSendTime = 0;
+
+  function setNoFace(show) {
+    noFace.style.display = show ? "flex" : "none";
+    if (show) {
+      facePill.textContent = "🚫 No Face";
+      facePill.style.background = "rgba(248,113,113,0.14)";
+      facePill.style.color = "#f87171";
+      facePill.style.borderColor = "rgba(248,113,113,0.4)";
+    } else {
+      facePill.textContent = "✅ Face Detected";
+      facePill.style.background = "rgba(74,222,128,0.14)";
+      facePill.style.color = "#4ade80";
+      facePill.style.borderColor = "rgba(74,222,128,0.4)";
+    }
+  }
+
+  function onResults(results) {
+    const now = performance.now();
+    const dt = now - lastFrameTime;
+    lastFrameTime = now;
+    const instFps = 1000 / Math.max(dt, 1);
+    fpsSmoothed = fpsSmoothed ? fpsSmoothed * 0.85 + instFps * 0.15 : instFps;
+    fpsEl.textContent = fpsSmoothed.toFixed(0);
+    latEl.textContent = (now - lastSendTime).toFixed(0) + " ms";
+
+    canvas.width = video.videoWidth || canvas.width;
+    canvas.height = video.videoHeight || canvas.height;
+    ctx.save();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const has = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
+    if (has) {
+      faceFrames++; noFaceFrames = 0;
+      setNoFace(false);
+      const lm = results.multiFaceLandmarks[0];
+      lmEl.textContent = lm.length;
+      streakEl.textContent = faceFrames + " frames";
+      if (window.drawConnectors && window.FACEMESH_TESSELATION) {
+        drawConnectors(ctx, lm, FACEMESH_TESSELATION, { color: "rgba(56,189,248,0.35)", lineWidth: 0.6 });
+        drawConnectors(ctx, lm, FACEMESH_FACE_OVAL, { color: "#38bdf8", lineWidth: 1.4 });
+        drawConnectors(ctx, lm, FACEMESH_LEFT_EYE, { color: "#67e8f9", lineWidth: 1.2 });
+        drawConnectors(ctx, lm, FACEMESH_RIGHT_EYE, { color: "#67e8f9", lineWidth: 1.2 });
+        drawConnectors(ctx, lm, FACEMESH_LIPS, { color: "#a78bfa", lineWidth: 1.2 });
+        drawConnectors(ctx, lm, FACEMESH_LEFT_EYEBROW, { color: "#fbbf24", lineWidth: 1.1 });
+        drawConnectors(ctx, lm, FACEMESH_RIGHT_EYEBROW, { color: "#fbbf24", lineWidth: 1.1 });
+      }
+    } else {
+      noFaceFrames++; faceFrames = 0;
+      lmEl.textContent = "0";
+      streakEl.textContent = noFaceFrames + " frames";
+      if (noFaceFrames > 4) setNoFace(true);
+    }
+    ctx.restore();
+  }
+
+  const faceMesh = new FaceMesh({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+  });
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+  });
+  faceMesh.onResults(onResults);
+
+  navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 400 }, audio: false })
+    .then((stream) => {
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const loop = async () => {
+          if (video.readyState >= 2) {
+            lastSendTime = performance.now();
+            await faceMesh.send({ image: video });
+          }
+          requestAnimationFrame(loop);
+        };
+        loop();
+      };
+    })
+    .catch((err) => {
+      fallback.style.display = "flex";
+      fallbackMsg.textContent = (err && err.name === "NotAllowedError")
+        ? "Camera permission was denied. Allow camera access in your browser's address-bar icon and reload."
+        : "No camera available to the browser right now — it may already be in use by Person A's capture pipeline.";
+      document.getElementById("cam-live-badge").style.opacity = "0.4";
+    });
+})();
+</script>

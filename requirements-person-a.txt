@@ -1,0 +1,14 @@
+# Extra dependencies for Person A's LIVE capture mode (webcam + microphone).
+# Not required for demo mode or for Person B's backend/dashboard alone --
+# see requirements.txt for the base project dependencies.
+opencv-python>=4.9
+mediapipe>=0.10
+sounddevice>=0.4.6
+numpy>=1.26
+
+# Notes:
+# - sounddevice needs the native PortAudio library on your system.
+#   macOS:  brew install portaudio
+#   Ubuntu: sudo apt-get install libportaudio2
+#   Windows: usually works out of the box via the bundled wheel.
+# - mediapipe wheels are large (~50-100MB); allow a few minutes to install.
