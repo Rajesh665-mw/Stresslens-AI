@@ -9,7 +9,7 @@ from typing import Optional
 
 from utils.logger import get_logger
 
-logger = get_logger("person_a.face_mesh")
+logger = get_logger("perception.face_mesh")
 
 try:
     import cv2
@@ -36,7 +36,7 @@ class VideoCapture:
     def __init__(self, camera_index: int = 0):
         if not CV2_AVAILABLE:
             raise CameraUnavailableError(
-                "opencv-python is not installed. Run: pip install -r requirements-person-a.txt"
+                "opencv-python is not installed. Run: pip install -r requirements-perception.txt"
             )
         self.camera_index = camera_index
         self._cap = None
@@ -90,7 +90,7 @@ class FaceMeshProcessor:
     def __init__(self, max_num_faces: int = 1):
         if not MEDIAPIPE_AVAILABLE:
             raise CameraUnavailableError(
-                "mediapipe is not installed. Run: pip install -r requirements-person-a.txt"
+                "mediapipe is not installed. Run: pip install -r requirements-perception.txt"
             )
         self._mp_face_mesh = mp.solutions.face_mesh
         self._face_mesh = self._mp_face_mesh.FaceMesh(
@@ -128,7 +128,7 @@ class FaceMeshProcessor:
             cv2.circle(annotated, (px, py), 1, (235, 206, 0), -1)
 
         # Highlight eye contours with bright cyan wireframe
-        from person_a.video.facial_features import RIGHT_EYE, LEFT_EYE, MOUTH_OUTLINE, BROW_LEFT_ARC, BROW_RIGHT_ARC
+        from perception.video.facial_features import RIGHT_EYE, LEFT_EYE, MOUTH_OUTLINE, BROW_LEFT_ARC, BROW_RIGHT_ARC
         for eye in [RIGHT_EYE, LEFT_EYE]:
             pts = np.array([[int(landmarks[i][0] * w), int(landmarks[i][1] * h)] for i in eye], dtype=np.int32)
             cv2.polylines(annotated, [pts], True, (0, 255, 255), 1)

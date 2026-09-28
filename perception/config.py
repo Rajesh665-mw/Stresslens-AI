@@ -1,10 +1,9 @@
 """
-Configuration for Person A's signal-acquisition pipeline.
+Configuration for the perception signal-acquisition pipeline.
 
-Kept separate from utils/config.py (Person B's config) so the two halves
-of the project can be tuned independently. Both sides still share the
-same FEATURES_FILE path from utils/config.py -- that's the one thing
-that must never diverge.
+Kept modular from utils/config.py (backend/UI config) so perception thresholds,
+weights, and audio/video device settings can be tuned cleanly. Both modules share
+the same FEATURES_FILE path from utils/config.py as the integration contract.
 """
 
 # ---- Devices ----

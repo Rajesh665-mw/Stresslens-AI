@@ -1,6 +1,6 @@
 """
 Orchestrates the end-to-end flow:
-Person A's JSON -> Ollama -> parsed SLMResponse -> DataStore.
+Perception features JSON -> Ollama -> parsed SLMResponse -> DataStore.
 
 Runs as a background thread so the Streamlit UI stays responsive while
 this polls for new readings.
@@ -10,15 +10,15 @@ import time
 from typing import Optional
 
 from backend.data_store import store
+from backend.feature_watcher import FeatureWatcher
 from backend.ollama_client import OllamaClient
 from backend.response_parser import parse_slm_response
-from backend.watcher import FeatureWatcher
 from models.schemas import FeatureData, SLMResponse
 from prompts.stress_prompt import build_prompt
 from utils.config import POLL_INTERVAL_SECONDS
 from utils.logger import get_logger
 
-logger = get_logger("pipeline")
+logger = get_logger("inference_pipeline")
 
 _client = OllamaClient()
 _watcher = FeatureWatcher()
@@ -52,7 +52,7 @@ def _async_inference(features: FeatureData):
 
 def _poll_loop(stop_event: threading.Event):
     global _is_inferring
-    logger.info("Pipeline started -- watching for features from Person A's pipeline.")
+    logger.info("Pipeline started -- watching for features from perception pipeline.")
     while not stop_event.is_set():
         try:
             if _watcher.has_new_data():

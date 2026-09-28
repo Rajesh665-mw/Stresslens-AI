@@ -9,9 +9,9 @@ WHAT'S REAL VS. WHAT'S VISUAL (read this before a demo):
 - The live webcam feed + MediaPipe Face Mesh overlay, and the microphone
   waveform/spectrum, run entirely client-side in the browser (getUserMedia +
   MediaPipe/Web Audio API loaded from a CDN). They are genuinely live, not
-  fake loops — but they are a separate camera/mic handle from Person A's
-  Python capture pipeline. Most OSes only let one process hold a webcam/mic
-  at a time, so if Person A's pipeline already has the device open, the
+  fake loops — but they are a separate camera/mic handle from the
+  Python perception pipeline. Most OSes only let one process hold a webcam/mic
+  at a time, so if the perception pipeline already has the device open, the
   browser panel shows a graceful "camera/mic unavailable" state instead of
   the preview. Worth testing on the demo machine beforehand.
 - Every number on the Physiological / Voice / Stress panels (blink rate,
@@ -44,7 +44,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.data_store import store
-from backend.pipeline import start_background_pipeline, run_inference, get_latest_features
+from backend.inference_pipeline import start_background_pipeline, run_inference, get_latest_features
 from utils.config import APP_TITLE, UI_REFRESH_SECONDS, STALE_DATA_SECONDS, POLL_INTERVAL_SECONDS, FRAME_FILE
 
 
@@ -255,7 +255,7 @@ if features is None or response is None:
             <div style="font-size:2rem;">⏳</div>
             <div style="font-weight:700; margin-top:8px;">Waiting for live data…</div>
             <div class="panel-sub" style="margin-top:6px;">
-                Make sure Person A's pipeline (or <code>python simulate_person_a.py</code>) is writing to
+                Make sure the perception pipeline (or <code>python simulate_features.py</code>) is writing to
                 <code>data/features.json</code>.
             </div>
         </div>

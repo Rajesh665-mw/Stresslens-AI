@@ -16,10 +16,10 @@ import sys
 import unittest
 import numpy as np
 
-from person_a.calibration import BaselineCalibrator
-from person_a.fusion.feature_fusion import StressFusionEngine
-from person_a.video.facial_features import FacialFeatureExtractor
-from person_a.audio.audio_features import AudioFeatureExtractor, estimate_pitch
+from perception.calibration import BaselineCalibrator
+from perception.fusion.feature_fusion import StressFusionEngine
+from perception.video.facial_features import FacialFeatureExtractor
+from perception.audio.audio_features import AudioFeatureExtractor, estimate_pitch
 
 
 class TestStressDetectorAccuracy(unittest.TestCase):

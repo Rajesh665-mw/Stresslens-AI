@@ -1,16 +1,16 @@
 """
 Demo mode: replays a canned stress profile (calm / medium / high) into
 the shared features.json on a fixed interval, without needing a webcam
-or microphone at all. Used for reliable hackathon demos and for
-developing/testing Person B's stack independently of live hardware.
+or microphone at all. Used for reliable demos and for
+testing the backend/UI stack independently of live hardware.
 """
 import time
 
-from person_a.demo.samples import PROFILES
-from person_a.writer import write_features
+from perception.demo.samples import PROFILES
+from perception.feature_writer import write_features
 from utils.logger import get_logger
 
-logger = get_logger("person_a.demo_mode")
+logger = get_logger("perception.demo_mode")
 
 
 def run_demo(profile: str = "calm", interval_seconds: float = 2.0):

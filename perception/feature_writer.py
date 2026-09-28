@@ -1,9 +1,9 @@
 """
-Writes Person A's fused feature readings to the shared JSON file that
-Person B's backend watches (`utils.config.FEATURES_FILE`).
+Writes fused perception feature readings to the shared JSON file that
+the backend watches (`utils.config.FEATURES_FILE`).
 
-Writes are atomic (write to a temp file, then os.replace) so Person B's
-watcher never reads a half-written file mid-write.
+Writes are atomic (write to a temp file, then os.replace) so the backend
+feature watcher never reads a half-written file mid-write.
 """
 import json
 import os
@@ -11,13 +11,13 @@ import sys
 import time
 
 # Make the project root importable no matter how this module is invoked
-# (as a script, as `python -m person_a.main`, or imported from a test).
+# (as a script, as `python -m perception.main`, or imported from a test).
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.config import FEATURES_FILE, FRAME_FILE  # shared contract paths
 from utils.logger import get_logger
 
-logger = get_logger("person_a.writer")
+logger = get_logger("perception.feature_writer")
 
 
 def write_features(feature_dict: dict, path: str = FEATURES_FILE) -> bool:

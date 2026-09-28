@@ -1,13 +1,13 @@
 """
-Entry point for Person A's signal-acquisition pipeline.
+Entry point for the multimodal perception & signal-acquisition pipeline.
 
 Usage (from the project root):
-    python -m person_a.main --mode demo --profile calm
-    python -m person_a.main --mode demo --profile medium
-    python -m person_a.main --mode demo --profile high
-    python -m person_a.main --mode live
-    python -m person_a.main --mode live --no-audio
-    python -m person_a.main --mode live --no-video
+    python -m perception.main --mode demo --profile calm
+    python -m perception.main --mode demo --profile medium
+    python -m perception.main --mode demo --profile high
+    python -m perception.main --mode live
+    python -m perception.main --mode live --no-audio
+    python -m perception.main --mode live --no-video
 
 Live mode runs a video thread and an audio thread, each updating shared
 state, while the main thread periodically fuses whatever is currently
@@ -19,13 +19,19 @@ import threading
 import time
 from typing import Optional
 
-from person_a.config_a import CAMERA_INDEX, FUSION_INTERVAL_SECONDS, VIDEO_TARGET_FPS, AUDIO_BLOCK_SECONDS, CALIBRATION_DURATION_SECONDS
-from person_a.calibration import BaselineCalibrator
-from person_a.fusion.feature_fusion import StressFusionEngine
-from person_a.writer import write_features
+from perception.config import (
+    CAMERA_INDEX,
+    FUSION_INTERVAL_SECONDS,
+    VIDEO_TARGET_FPS,
+    AUDIO_BLOCK_SECONDS,
+    CALIBRATION_DURATION_SECONDS,
+)
+from perception.calibration import BaselineCalibrator
+from perception.fusion.feature_fusion import StressFusionEngine
+from perception.feature_writer import write_features
 from utils.logger import get_logger
 
-logger = get_logger("person_a.main")
+logger = get_logger("perception.main")
 
 
 class LiveState:
@@ -56,9 +62,9 @@ def _video_loop(state: LiveState, stop_event: threading.Event, camera_index: int
     """Runs in its own thread: opens the webcam + face mesh, and keeps
     `state.facial` fresh."""
     import cv2
-    from person_a.video.face_mesh import VideoCapture, FaceMeshProcessor, CameraUnavailableError
-    from person_a.video.facial_features import FacialFeatureExtractor
-    from person_a.writer import write_frame
+    from perception.video.face_mesh import VideoCapture, FaceMeshProcessor, CameraUnavailableError
+    from perception.video.facial_features import FacialFeatureExtractor
+    from perception.feature_writer import write_frame
 
     extractor = FacialFeatureExtractor(calibrator=calibrator)
     frame_interval = 1.0 / max(1, VIDEO_TARGET_FPS)
@@ -132,8 +138,8 @@ def _video_loop(state: LiveState, stop_event: threading.Event, camera_index: int
 
 def _audio_loop(state: LiveState, stop_event: threading.Event, calibrator: BaselineCalibrator):
     """Runs in its own thread: opens the mic and keeps `state.audio` fresh."""
-    from person_a.audio.mic_capture import MicCapture, MicrophoneUnavailableError
-    from person_a.audio.audio_features import AudioFeatureExtractor
+    from perception.audio.mic_capture import MicCapture, MicrophoneUnavailableError
+    from perception.audio.audio_features import AudioFeatureExtractor
 
     try:
         mic = MicCapture()
@@ -204,7 +210,7 @@ def run_live(use_video: bool = True, use_audio: bool = True, camera_index: int =
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Person A: physiological signal acquisition pipeline")
+    parser = argparse.ArgumentParser(description="Multimodal physiological signal acquisition & perception pipeline")
     parser.add_argument("--mode", choices=["live", "demo"], default="demo", help="Capture mode")
     parser.add_argument("--profile", choices=["calm", "medium", "high"], default="calm", help="Demo profile (demo mode only)")
     parser.add_argument("--interval", type=float, default=2.0, help="Seconds between demo writes")
@@ -214,7 +220,7 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "demo":
-        from person_a.demo.demo_mode import run_demo
+        from perception.demo.demo_mode import run_demo
         run_demo(profile=args.profile, interval_seconds=args.interval)
     else:
         if args.no_video and args.no_audio:

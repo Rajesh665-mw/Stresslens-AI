@@ -1,5 +1,5 @@
 """
-Baseline Calibration Engine for Person A's signal acquisition pipeline.
+Baseline Calibration Engine for the perception signal acquisition pipeline.
 
 Collects resting/normal physiological & vocal features during an initial
 startup period (typically 10-15 seconds) to establish the user's personal
@@ -11,7 +11,7 @@ import numpy as np
 from typing import Optional, Dict, Any
 from utils.logger import get_logger
 
-logger = get_logger("person_a.calibration")
+logger = get_logger("perception.calibration")
 
 
 class BaselineCalibrator:

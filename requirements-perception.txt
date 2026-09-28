@@ -1,5 +1,5 @@
-# Extra dependencies for Person A's LIVE capture mode (webcam + microphone).
-# Not required for demo mode or for Person B's backend/dashboard alone --
+# Dependencies for multimodal perception LIVE capture (webcam + microphone).
+# Not required for demo mode or for the core dashboard/backend alone --
 # see requirements.txt for the base project dependencies.
 opencv-python>=4.9
 mediapipe>=0.10

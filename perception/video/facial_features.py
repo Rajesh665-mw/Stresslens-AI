@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 
 import numpy as np
 
-from person_a.config_a import (
+from perception.config import (
     EAR_BLINK_THRESHOLD,
     BLINK_MIN_FRAMES_CLOSED,
     BLINK_RATE_WINDOW_SECONDS,
@@ -25,7 +25,7 @@ from person_a.config_a import (
     JAW_CLENCH_STRESS_SCALE,
     BLINK_RATE_STRESS_SCALE,
 )
-from person_a.calibration import BaselineCalibrator
+from perception.calibration import BaselineCalibrator
 
 # --- MediaPipe Face Mesh landmark indices ---
 RIGHT_EYE = [33, 160, 158, 133, 153, 144]

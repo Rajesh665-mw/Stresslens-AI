@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 from typing import Optional, Tuple, Dict, Any
 
-from person_a.config_a import (
+from perception.config import (
     EMA_ALPHA,
     STRESS_LEVEL_LOW_MAX,
     STRESS_LEVEL_MODERATE_MAX,
@@ -24,10 +24,10 @@ from person_a.config_a import (
     SHIMMER_STRESS_RANGE,
     SPECTRAL_CENTROID_STRESS_SCALE,
 )
-from person_a.calibration import BaselineCalibrator
+from perception.calibration import BaselineCalibrator
 from utils.logger import get_logger
 
-logger = get_logger("person_a.fusion")
+logger = get_logger("perception.fusion")
 
 
 def _clamp01(x: float) -> float:

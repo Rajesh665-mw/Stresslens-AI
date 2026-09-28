@@ -1,5 +1,5 @@
 """
-Watches for new physiological feature readings written by Person A's
+Watches for new physiological feature readings written by the perception
 pipeline. Deliberately simple + defensive: file-based polling, so the
 team can swap in a socket later without changing the contract
 (read_latest() always returns Optional[FeatureData], never raises).
@@ -13,11 +13,11 @@ from models.schemas import FeatureData
 from utils.config import FEATURES_FILE
 from utils.logger import get_logger
 
-logger = get_logger("watcher")
+logger = get_logger("feature_watcher")
 
 
 class FeatureWatcher:
-    """Polls a JSON file for new readings from Person A's extraction pipeline."""
+    """Polls a JSON file for new readings from the perception pipeline."""
 
     def __init__(self, path: str = FEATURES_FILE):
         self.path = path
@@ -34,7 +34,7 @@ class FeatureWatcher:
     def read_latest(self) -> Optional[FeatureData]:
         """Reads and parses the latest features file.
         Returns None (and logs) on any failure instead of raising, so a
-        half-written file from Person A never crashes the backend."""
+        half-written file from perception never crashes the backend."""
         if not os.path.exists(self.path):
             return None
         try:

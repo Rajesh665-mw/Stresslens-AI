@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any
 
 import numpy as np
 
-from person_a.config_a import (
+from perception.config import (
     AUDIO_SAMPLE_RATE,
     SILENCE_RMS_THRESHOLD,
     VAD_ZCR_MAX_SILENCE,
@@ -21,7 +21,7 @@ from person_a.config_a import (
     SPEECH_RATE_WINDOW_SECONDS,
     MEDIAN_FILTER_WINDOW,
 )
-from person_a.calibration import BaselineCalibrator
+from perception.calibration import BaselineCalibrator
 
 
 def _rms(samples: np.ndarray) -> float:

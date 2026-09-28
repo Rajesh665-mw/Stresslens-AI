@@ -17,10 +17,10 @@ from typing import Optional
 
 import numpy as np
 
-from person_a.config_a import AUDIO_SAMPLE_RATE, AUDIO_BLOCK_SECONDS, AUDIO_BUFFER_SECONDS
+from perception.config import AUDIO_SAMPLE_RATE, AUDIO_BLOCK_SECONDS, AUDIO_BUFFER_SECONDS
 from utils.logger import get_logger
 
-logger = get_logger("person_a.mic_capture")
+logger = get_logger("perception.mic_capture")
 
 try:
     import sounddevice as sd
@@ -120,7 +120,7 @@ class MicCapture:
         if not SOUNDDEVICE_AVAILABLE:
             raise MicrophoneUnavailableError(
                 f"sounddevice/PortAudio is not available ({_import_error}). "
-                "Run: pip install -r requirements-person-a.txt and ensure "
+                "Run: pip install -r requirements-perception.txt and ensure "
                 "PortAudio is installed on your system."
             )
         self.sample_rate = sample_rate

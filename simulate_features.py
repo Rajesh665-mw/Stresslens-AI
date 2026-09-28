@@ -1,10 +1,10 @@
 """
-Standalone simulator that mimics Person A's extraction pipeline output.
-Useful for developing and demoing Person B's stack before the real
+Standalone simulator that mimics the perception pipeline output.
+Useful for developing and demoing the backend and UI stack before the real
 webcam/microphone pipeline is wired in.
 
 Run with (from the project root):
-    python simulate_person_a.py
+    python simulate_features.py
 """
 import json
 import os
@@ -41,7 +41,7 @@ def random_reading() -> dict:
 
 def main():
     os.makedirs(os.path.dirname(FEATURES_FILE), exist_ok=True)
-    print(f"Simulating Person A's feature pipeline -> {FEATURES_FILE}")
+    print(f"Simulating perception feature pipeline -> {FEATURES_FILE}")
     print("Press Ctrl+C to stop.")
     try:
         while True:
